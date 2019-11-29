@@ -21,8 +21,8 @@ load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library"
 
 
 cc_library(
-    name = "signn_calculator",
-    srcs = ["signn.cc"],
+    name = "python_caller_calculator",
+    srcs = ["python_caller_calculator.cc"],
     visibility = ["//visibility:public"],
     deps = [
         "//mediapipe/framework:calculator_framework",
