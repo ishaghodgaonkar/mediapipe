@@ -30,11 +30,11 @@ namespace{
 
 }
 
-    class SignnCalculator : public CalculatorBase {
+    class PythonCallerCalculator : public CalculatorBase {
 
     public:
-    SignnCalculator() {}
-    ~SignnCalculator() {}
+    PythonCallerCalculator() {}
+    ~PythonCallerCalculator() {}
 
 
     static ::mediapipe::Status GetContract(CalculatorContract* cc){
@@ -110,6 +110,6 @@ namespace{
 
     };
 
-    REGISTER_CALCULATOR(SignnCalculator);
+    REGISTER_CALCULATOR(PythonCallerCalculator);
 
 }
