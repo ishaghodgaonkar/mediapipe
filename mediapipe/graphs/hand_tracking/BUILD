@@ -73,6 +73,7 @@ cc_library(
         "//mediapipe/calculators/util:collection_has_min_size_calculator",
         "//mediapipe/calculators/signn:python_caller_calculator",
         "//mediapipe/calculators/signn:logger_calculator",
+        "//mediapipe/calculators/signn:console_logger_calculator",        
         "//mediapipe/graphs/hand_tracking/subgraphs:multi_hand_detection_cpu",
         "//mediapipe/graphs/hand_tracking/subgraphs:multi_hand_landmark_cpu",
         "//mediapipe/graphs/hand_tracking/subgraphs:multi_hand_renderer_cpu",

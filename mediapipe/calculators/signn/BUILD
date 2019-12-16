@@ -55,6 +55,19 @@ cc_library(
             "//mediapipe/framework/port:file_helpers",
         ],
     }),
-    data = ["main.py"],
     alwayslink = 1,
+)
+
+cc_library(
+    name = "console_logger_calculator",
+    srcs = ["coordinate_console_logger.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/formats:detection_cc_proto",
+        "//mediapipe/framework/deps:file_path",    
+    ],
+    alwayslink = 1
 )
