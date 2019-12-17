@@ -71,3 +71,21 @@ cc_library(
     ],
     alwayslink = 1
 )
+
+cc_library(
+    name = "error_min_character_algo_calculator",
+    srcs = ["error_min_character_algo_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/formats:detection_cc_proto",
+        "//mediapipe/framework/deps:file_path",
+    ] + select({
+        "//conditions:default": [
+            "//mediapipe/framework/port:file_helpers",
+        ],
+    }),
+    alwayslink = 1,
+)
