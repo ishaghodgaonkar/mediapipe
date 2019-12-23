@@ -71,3 +71,16 @@ cc_library(
     ],
     alwayslink = 1
 )
+
+cc_library(
+    name = "coordinate_modifiers",
+    srcs = ["coordinate_modifiers.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/formats:detection_cc_proto",
+    ],
+    alwayslink = 1
+)
