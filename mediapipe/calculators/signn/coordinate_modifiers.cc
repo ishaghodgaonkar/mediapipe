@@ -16,6 +16,7 @@
 
 const int SEND_EVERY_X_FRAMES = 3;
 const int SEND_EVERY_X_SECONDS = 9;
+const int ROLLING_AVERAGE_WINDOW_FRAMES = 3;
 
 namespace mediapipe{
 
@@ -23,7 +24,7 @@ namespace mediapipe{
         constexpr char NormalizedLandmarks[] = "LANDMARKS";
     }
 
-
+    // This calculator is an abstract class, don't pay too much attention to it
     class LimitationCalculator : public CalculatorBase {
         public:
         static ::mediapipe::Status GetContract(CalculatorContract* cc){
@@ -32,7 +33,7 @@ namespace mediapipe{
             return ::mediapipe::OkStatus();
         }
         ::mediapipe::Status Process(CalculatorContext* cc){
-            if(! cc -> Inputs().Tag(NormalizedLandmarks).IsEmpty() && sendConditionMet()){
+            if(! cc->Inputs().Tag(NormalizedLandmarks).IsEmpty() && sendConditionMet()){
                 cc->Outputs().Tag(NormalizedLandmarks).AddPacket(cc->Inputs().Tag(NormalizedLandmarks).Value());
             }
             return ::mediapipe::OkStatus();
@@ -41,6 +42,7 @@ namespace mediapipe{
         virtual bool sendConditionMet() = 0;
     };
 
+    // This calculator will send only every 'x' frame through it. For example, will send only every 3rd frames. It does not care how long it has been since the last frame
     class CoordinateFrameLimitationCalculator : public LimitationCalculator {
         public:
         CoordinateFrameLimitationCalculator(){};
@@ -60,6 +62,7 @@ namespace mediapipe{
     };
     REGISTER_CALCULATOR(CoordinateFrameLimitationCalculator);
 
+    // This calculator will send a frame every 'x' seconds. It doesn't care if 1 frame or 10 frames have passed within the specified interval
     class CoordinateTimeLimitationCalculator : public LimitationCalculator {
         public:
         CoordinateTimeLimitationCalculator(){};
@@ -77,4 +80,66 @@ namespace mediapipe{
 
     };
     REGISTER_CALCULATOR(CoordinateTimeLimitationCalculator);
+
+    // This calculator will spit out the average frame of the last x frames
+    // This calculator will not have output until the specified x number of frames are seen
+    class RollingAverageCalculator : public CalculatorBase {
+        public:
+        RollingAverageCalculator(){};
+        ~RollingAverageCalculator(){};
+        static ::mediapipe::Status GetContract(CalculatorContract* cc){
+            cc->Inputs().Tag(NormalizedLandmarks).Set<std::vector<std::vector<NormalizedLandmark>>>();
+            cc->Outputs().Tag(NormalizedLandmarks).Set<std::vector<std::vector<NormalizedLandmark>>>();
+            return ::mediapipe::OkStatus();
+        }
+
+        ::mediapipe::Status Process(CalculatorContext* cc){
+            std::vector<std::vector<NormalizedLandmark>> hands = cc -> Inputs().Tag(NormalizedLandmarks).Get<std::vector<std::vector<NormalizedLandmark>>>();
+
+            if(averagePointer >= ROLLING_AVERAGE_WINDOW_FRAMES){
+                averagePointer = 0;
+                full = true;
+            }
+            if(hands.size() > 0){
+                memory[averagePointer] = hands.at(0);
+                averagePointer++;
+            }
+
+            if(full){
+                std::vector<NormalizedLandmark> result = getAverage();
+                std::vector<std::vector<NormalizedLandmark>> send;
+                send.push_back(result);
+                std::unique_ptr<std::vector<std::vector<NormalizedLandmark>>> output_stream_collection = std::make_unique<std::vector<std::vector<NormalizedLandmark>>>(send);
+                cc -> Outputs().Tag(NormalizedLandmarks).Add(output_stream_collection.release(), cc->InputTimestamp());
+            }
+            return ::mediapipe::OkStatus();
+        }        
+        private:
+        std::vector<NormalizedLandmark> memory[ROLLING_AVERAGE_WINDOW_FRAMES];
+        int averagePointer = 0;
+        bool full = false;
+
+
+
+        std::vector<NormalizedLandmark> getAverage(){
+            std::vector<NormalizedLandmark> result;
+            float averages[42] = {};
+            for(int savedInstance = 0; savedInstance < ROLLING_AVERAGE_WINDOW_FRAMES; savedInstance++){
+                for(int pointIndex = 0; pointIndex < 21; pointIndex+= 1){
+                    averages[pointIndex * 2] += memory[savedInstance].at(pointIndex).x() / ROLLING_AVERAGE_WINDOW_FRAMES;
+                    averages[pointIndex * 2 + 1] += memory[savedInstance].at(pointIndex).y() / ROLLING_AVERAGE_WINDOW_FRAMES;
+
+                }
+            }
+            for(int i = 0; i < 42; i+= 2){
+                NormalizedLandmark l = NormalizedLandmark();
+                l.set_x(averages[i]);
+                l.set_y(averages[i + 1]);
+                result.push_back(l);
+            }
+            return result;
+        }
+
+    };
+    REGISTER_CALCULATOR(RollingAverageCalculator);
 }

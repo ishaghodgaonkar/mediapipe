@@ -69,12 +69,12 @@ namespace mediapipe{
             }else{
                 file << ", [";
             }
-            
+
             for(int i = 0; i < hands.size(); i++){
                 auto hand = hands.at(i);
                 file << "[";
                 for(int j = 0; j < hand.size(); j++){
-                    file << hand.at(j).x() << ", " <<  hand.at(j).y();
+                    file << std::fixed << hand.at(j).x() << ", " << std::fixed << hand.at(j).y();
                     if(j + 1 < hand.size()){
                         file << ", ";
                     }
