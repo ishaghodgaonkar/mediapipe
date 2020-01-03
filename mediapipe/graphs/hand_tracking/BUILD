@@ -75,6 +75,7 @@ cc_library(
         "//mediapipe/calculators/signn:logger_calculator",
         "//mediapipe/calculators/signn:console_logger_calculator",        
         "//mediapipe/calculators/signn:error_min_character_algo_calculator",
+        "//mediapipe/calculators/signn:coordinate_modifiers",      
         "//mediapipe/graphs/hand_tracking/subgraphs:multi_hand_detection_cpu",
         "//mediapipe/graphs/hand_tracking/subgraphs:multi_hand_landmark_cpu",
         "//mediapipe/graphs/hand_tracking/subgraphs:multi_hand_renderer_cpu",

@@ -73,6 +73,20 @@ cc_library(
 )
 
 cc_library(
+    name = "coordinate_modifiers",
+    srcs = ["coordinate_modifiers.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/formats:detection_cc_proto",
+    ],
+    alwayslink = 1
+)
+
+cc_library(
+    
     name = "error_min_character_algo_calculator",
     srcs = ["error_min_character_algo_calculator.cc"],
     visibility = ["//visibility:public"],
@@ -81,6 +95,7 @@ cc_library(
         "//mediapipe/framework/formats:landmark_cc_proto",
         "//mediapipe/framework/formats:location_data_cc_proto",
         "//mediapipe/framework/formats:detection_cc_proto",
+
         "//mediapipe/framework/deps:file_path",
     ] + select({
         "//conditions:default": [
