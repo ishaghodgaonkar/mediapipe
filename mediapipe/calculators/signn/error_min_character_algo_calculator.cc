@@ -129,6 +129,8 @@ namespace mediapipe{
         std::vector<std::vector<float>> sample_stdevs;
         std::vector<double> sample_sizes;
 
+
+
         float errorTest(const std::vector<float> coordinates, const std::vector<float> training_mean_coordinates, const std::vector<float> training_stdev, const double training_sample_size){
             float error = 0;
             for(int i = 0; i < training_mean_coordinates.size(); i++){
@@ -136,8 +138,7 @@ namespace mediapipe{
                 if(top < 0){
                     top *= -1;
                 }
-                // error += top / (training_stdev.at(i) / std::sqrt(training_sample_size)); When stdev / sqrt(n) (STANDARD ERROR) is thrown in, V and G become the only guesses
-                
+                error += top / (training_stdev.at(i) / std::sqrt(training_sample_size)); 
             }
             return error;
         };
@@ -145,19 +146,37 @@ namespace mediapipe{
             float error;
             std::string name;
         };
-
+        
         result errorMin(std::vector<float> foundData){
             float min_error = std::numeric_limits<float>::max();
             std::string best_word = "";
 
+            std::vector<result> results;
+
             for(int i = 0; i < sample_words.size(); i++){
                 float foundError = errorTest(foundData, sample_means.at(i), sample_stdevs.at(i), sample_sizes.at(i));
+                std::cout << sample_words.at(i) << ": " << foundError << ", ";
+                results.push_back(result{foundError, sample_words.at(i)});
                 if(foundError < min_error){
                     min_error = foundError;
                     best_word = sample_words.at(i);
-
                 }
             }
+            // Bubblesort!
+            for(int i = 0; i < results.size()-1; i++){
+                for(int j = 0; j < results.size()-1; j++){
+                    if(results.at(j).error > results.at(j + 1).error){
+                        std::cout << "Swap: " << results.at(j).name << " and " << results.at(j+1).name << "\n";
+                        result temp = results.at(j);
+                        results.at(j) = results.at(j+1);
+                        results.at(j+1) = temp;
+                    }
+                }
+            }
+            for(int i = 0; i < results.size()-1; i++){
+                std::cout << results.at(i).name << ": " << results.at(i).error << ", ";
+            }
+            std::cout << "\n";
             return result{
                 min_error,
                 best_word
