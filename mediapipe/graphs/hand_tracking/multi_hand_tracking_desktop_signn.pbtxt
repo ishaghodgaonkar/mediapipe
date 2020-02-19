@@ -60,7 +60,20 @@ node {
 node {
   calculator: "ZScoreCalculator"
   input_stream: "LANDMARKS:multi_hand_landmarks"
+  output_stream: "LANDMARKS:z_score"
 }
+
+node {
+  calculator: "CoordinateTimeLimitationCalculator"
+  input_stream: "LANDMARKS:z_score"
+  output_stream: "LANDMARKS:z_score_delayed"
+}
+
+node {
+  calculator : "CoordinateConsoleLoggerCalculator"
+  input_stream : "LANDMARKS:z_score_delayed"
+}
+
 
 # Caches a hand rectangle fed back from MultiHandLandmarkSubgraph, and upon the
 # arrival of the next input image sends out the cached rectangle with the
