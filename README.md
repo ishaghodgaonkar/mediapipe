@@ -1,7 +1,7 @@
 # SigNN
 
 ## Abstract
-Our project does real-time translation of American Sign Language into English text (characters only for now); all data was self-collected and we used google collab to collect, aggregate, and analyze data. We achieved this objective using Mediapipe, a machine learning application that can handle live streams of data. ??We like to think of it as Duolingo for ASL??
+Our project does real-time translation of American Sign Language into English text (characters only for now); all data was self-collected and we used google collab to collect, aggregate, and analyze data. We achieved this objective using Mediapipe, a machine learning application that can handle live streams of data.
 
 ## Contributors
 - Ari Alvan
@@ -28,7 +28,9 @@ When we returned from Winter Break we not only had 2 working algorithms but a ne
 obsolete within a few weeks of their completion, but they provided insight into potential obstacles that the neural network may encounter.
 
 For example, some letters were acidentally detected more often
-than others such as M or I due to sharing characteristics with multiple other letters. (Insert M and I images here)
+than others such as M or I due to sharing characteristics with multiple other letters. 
+![alt text](https://github.com/JohnK-mi/mediapipe/blob/master/scripts/mediapipe_image_means/M.png)
+![alt text](https://github.com/JohnK-mi/mediapipe/blob/master/scripts/mediapipe_image_means/I.png)
 
 
 ## Key Results
