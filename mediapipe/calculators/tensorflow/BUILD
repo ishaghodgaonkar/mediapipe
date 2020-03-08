@@ -1128,3 +1128,31 @@ filegroup(
         "testdata/tensorflow_saved_model/00000000/variables/variables.index",
     ],
 )
+
+cc_library(
+    name = "signn_calculator",
+    srcs = ["signn_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tensorflow_session",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/formats:detection_cc_proto",
+        "//mediapipe/framework/tool:status_util",
+        "//mediapipe/framework/deps:clock",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework/port:ret_check",
+    ] + select({
+        "//conditions:default": [
+            "@org_tensorflow//tensorflow/core:framework",
+        ],
+        "//mediapipe:android": [
+            "@org_tensorflow//tensorflow/core:android_tensorflow_lib_lite_nortti_lite_protos",
+        ],
+        "//mediapipe:ios": [
+            "@org_tensorflow//tensorflow/core:ios_tensorflow_lib",
+        ],
+    }),
+    alwayslink = 1
+)

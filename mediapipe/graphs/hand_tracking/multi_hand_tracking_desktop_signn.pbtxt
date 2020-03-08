@@ -70,7 +70,19 @@ node {
 }
 
 node {
-  calculator : "CoordinateConsoleLoggerCalculator"
+  calculator: "TensorFlowSessionFromSavedModelCalculator"
+  output_side_packet: "SESSION:signn_session"
+  node_options: {
+    [type.googleapis.com/mediapipe.TensorFlowSessionFromSavedModelCalculatorOptions]: {
+      saved_model_path: "mediapipe/models/sigNN_saved_model"
+    }
+  }
+}
+
+
+node {
+  calculator : "SigNNCalculator"
+  input_side_packet: "SESSION:signn_session"
   input_stream : "LANDMARKS:z_score_delayed"
 }
 

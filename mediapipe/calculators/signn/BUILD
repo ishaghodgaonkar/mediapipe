@@ -97,3 +97,4 @@ cc_library(
     ],
     alwayslink = 1
 )
+
