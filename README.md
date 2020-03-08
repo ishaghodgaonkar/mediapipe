@@ -29,7 +29,10 @@ obsolete within a few weeks of their completion, but they provided insight into 
 
 For example, some letters were acidentally detected more often
 than others such as M or I due to sharing characteristics with multiple other letters. 
+
+
 ![alt text](https://github.com/JohnK-mi/mediapipe/blob/master/scripts/mediapipe_image_means/M.png)
+
 ![alt text](https://github.com/JohnK-mi/mediapipe/blob/master/scripts/mediapipe_image_means/I.png)
 
 
