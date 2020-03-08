@@ -14,7 +14,7 @@ Our project does real-time translation of American Sign Language into English te
 - Conor O'Brien
 
 ## Motivation
-There have been many attempts at creating a similar project like ours but none work very well. So, we wanted to make one such project that works best. We knew this was going to be a difficult undertaking which is why we wanted to work on this project. We wanted to make something that would be able to help people communicate and connect with each other regardless of language barriers and sound barriers.
+There have been many attempts at creating a similar project like ours but none work very well. We knew this was going to be a difficult undertaking which is why we wanted to work on this project. We wanted to make something that would be able to help people communicate and connect with each other regardless of language barriers and sound barriers.
 
 ## Methodology
 When we began work on our project we had Mediapipe. Mediapipe provided a solid foundation for both data collection as well as hand tracking. This meant that we already had a major obstacle removed, 
