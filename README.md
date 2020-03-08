@@ -1,7 +1,7 @@
 # SigNN
 
 ## Abstract
-Our project does real-time translation of American Sign Language into English text (characters only for now); all data was self-collected and we used google collab to collect, aggregate, and analyze data. We achieved this objective using Mediapipe, a machine learning application that can handle live streams of data.
+Our project does real-time translation of American Sign Language into English text (characters only for now). All data was self-collected and we used google collab to collect, aggregate, and analyze data. We achieved this objective using Mediapipe, a machine learning application that can handle live streams of data.
 
 ## Contributors
 - Ari Alvan
