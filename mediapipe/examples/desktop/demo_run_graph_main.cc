@@ -25,8 +25,14 @@
 #include "mediapipe/framework/port/parse_text_proto.h"
 #include "mediapipe/framework/port/status.h"
 
+#include "mediapipe/framework/formats/landmark.pb.h"
+
+#include <vector>
+#include <fstream>
+
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
+constexpr char kOutputStreamCoordinates[] = "multi_hand_landmarks";
 constexpr char kWindowName[] = "MediaPipe";
 
 DEFINE_string(
@@ -37,6 +43,9 @@ DEFINE_string(input_video_path, "",
               "If not provided, attempt to use a webcam.");
 DEFINE_string(output_video_path, "",
               "Full path of where to save result (.mp4 only). "
+              "If not provided, show result in a window.");
+DEFINE_string(output_json_path, "",
+              "Full path of where to save result (.json only). "
               "If not provided, show result in a window.");
 
 ::mediapipe::Status RunMPPGraph() {
@@ -65,6 +74,10 @@ DEFINE_string(output_video_path, "",
 
   cv::VideoWriter writer;
   const bool save_video = !FLAGS_output_video_path.empty();
+  const bool save_json = !FLAGS_output_json_path.empty();
+  if(save_json && save_video){
+    throw "Cannot save json and video";
+  }
   if (save_video) {
     LOG(INFO) << "Prepare video writer.";
     cv::Mat test_frame;
@@ -74,13 +87,81 @@ DEFINE_string(output_video_path, "",
                 mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
                 capture.get(cv::CAP_PROP_FPS), test_frame.size());
     RET_CHECK(writer.isOpened());
-  } else {
+  }else if(save_json){
+    LOG(INFO) << "Will save result as json";
+  }
+   else {
     cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
   }
 
   LOG(INFO) << "Start running the calculator graph.";
+  if(save_json){
+    LOG(INFO) << "Start grabbing and processing frames.";
+    ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
+                graph.AddOutputStreamPoller(kOutputStreamCoordinates));
+    MP_RETURN_IF_ERROR(graph.StartRun({}));
+    size_t frame_timestamp = 0;
+    bool grab_frames = true;
+    bool firstwrite = true;
+    std::ofstream file;
+    file.open(FLAGS_output_json_path.c_str());
+    file << "[";
+    while (grab_frames){
+      // Capture opencv camera or video frame.
+      cv::Mat camera_frame_raw;
+      capture >> camera_frame_raw;
+      if (camera_frame_raw.empty()) break;  // End of video.
+      cv::Mat camera_frame;
+      cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
+      if (!load_video) {
+        cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
+      }
+      
+          // Wrap Mat into an ImageFrame.
+    auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
+        mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
+        mediapipe::ImageFrame::kDefaultAlignmentBoundary);
+    cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
+    camera_frame.copyTo(input_frame_mat);
+    
+    // Send image packet into the graph.
+    MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
+        kInputStream, mediapipe::Adopt(input_frame.release())
+                          .At(mediapipe::Timestamp(frame_timestamp++))));
+      mediapipe::Packet packet;
+      if(firstwrite){
+          file << "[";
+          firstwrite = false;
+      }else{
+          file << ", [";
+      }
+      if (!poller.Next(&packet)) break;
+      auto& frame_hands = packet.Get<std::vector<std::vector<mediapipe::NormalizedLandmark>>>();
+      for(auto i = 0; i < frame_hands.size(); i++){
+        auto hand = frame_hands.at(i);
+        file << "[";
+        for(int j = 0; j < hand.size(); j++){
+            file << std::fixed << hand.at(j).x() << ", " << std::fixed << hand.at(j).y();
+            if(j + 1 < hand.size()){
+                file << ", ";
+            }
+        }
+        if(i + 1 < frame_hands.size()){
+            file << "],";
+        }else{
+            file << "]";
+        }
+      }
+      file << "]";
+    }
+    file << "]";
+    file.close();
+    LOG(INFO) << "Shutting down.";
+    MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
+    return graph.WaitUntilDone();
+  }
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
-                   graph.AddOutputStreamPoller(kOutputStream));
+                graph.AddOutputStreamPoller(kOutputStream));
   MP_RETURN_IF_ERROR(graph.StartRun({}));
 
   LOG(INFO) << "Start grabbing and processing frames.";
@@ -110,21 +191,24 @@ DEFINE_string(output_video_path, "",
                           .At(mediapipe::Timestamp(frame_timestamp++))));
 
     // Get the graph result packet, or stop if that fails.
-    mediapipe::Packet packet;
-    if (!poller.Next(&packet)) break;
-    auto& output_frame = packet.Get<mediapipe::ImageFrame>();
+      mediapipe::Packet packet;
+      if (!poller.Next(&packet)) break;
+      auto& output_frame = packet.Get<mediapipe::ImageFrame>();
 
-    // Convert back to opencv for display or saving.
-    cv::Mat output_frame_mat = mediapipe::formats::MatView(&output_frame);
-    cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
-    if (save_video) {
-      writer.write(output_frame_mat);
-    } else {
-      cv::imshow(kWindowName, output_frame_mat);
-      // Press any key to exit.
-      const int pressed_key = cv::waitKey(5);
-      if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
-    }
+      // Convert back to opencv for display or saving.
+      cv::Mat output_frame_mat = mediapipe::formats::MatView(&output_frame);
+      cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
+      if (save_video) {
+        writer.write(output_frame_mat);
+      }
+      else{
+        cv::imshow(kWindowName, output_frame_mat);
+        // Press any key to exit.
+        const int pressed_key = cv::waitKey(5);
+        if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+      }
+    
+
   }
 
   LOG(INFO) << "Shutting down.";
