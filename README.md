@@ -86,7 +86,9 @@ The example shown above is the modification we made to the Multiple Hand Detecti
 
 This is an example of the output we modified Mediapipe to output. On the left is the rendered image that Mediapipe normally outputs and on the right is a graph of the series of coordinates that we modified Mediapipe to output.
 
-**Data collection** quickly became a problem for us as we took more and more pictures. We started with a data set of 100 and over winter break managed to expand to about 500 pictures, impressive at the time. After running testing with the neural network, we found our accuracy was unacceptable, about 60%. Up until this point, all data processing (turning of images into coordinates) was done semi-manually and all data was stored on a hard drive. We played around with the idea of a central website for the group (and maybe some voltuneers) to be able to upload their hands, however, we found a much better solution: Goolge Colab and Google Drive.
+**Data collection** was a crucial part of increasing our accuracy. We would have prefered to use publically available data to train our neural network. However, there were very few sign language data sets and the ones that did exist were of very low quality. As a result, we decided to create our own dataset. While the idea seems simple, it quickly became a problem for us as we took more and more pictures.
+
+ We started with a data set of 100 pictures and over winter break managed to expand to about 500 pictures, impressive at the time. After running testing with the neural network, we found our accuracy was unacceptable, about 60%. Up until this point, all data processing (turning of images into coordinates) was done semi-manually and all data was stored on a hard drive. We played around with the idea of a central website for the group (and maybe some voltuneers) to be able to upload their hands, however, we found a much better solution: Goolge Colab and Google Drive.
 
 ![Data collection process](https://user-images.githubusercontent.com/49175620/76173861-7a9bb180-6160-11ea-9c34-68871054c4c5.png)
 
@@ -99,6 +101,8 @@ We created a series of Google Colab scripts in order to streamline data collecti
 - Json creation script ([Mediapipe](https://colab.research.google.com/drive/1RUSUH9C91uZt3MO56yqZMglqol0aPVoX) / [Openpose](https://colab.research.google.com/drive/1zWzXpi_9n0R23Dk_pA3PPs5J_6pk-9Bw)): This script will get a list of all raw images and all raw json files. Then the script will process all raw images that have not been found in the raw json folder. It can do this because one image will create one json file of the same name and upload it to the raw json folder.
 
 - Json formation script ([Openpose](https://colab.research.google.com/drive/1F4Zw9shdp73fVYtX0jMD7idA-TecCpCJ)): This script will download the formed json file for each character (Formed json is the collection of many json files into one json list or object). If the length of the list of the formed json file is equal to the number of raw json files associated with that character, we know that there have been no additional json files added. Otherwise, we will delete the formed_json file (as we cannot discriminately modify the formed json file) and reform it with the data from the raw json folder for that associated character. When all characters are formed, they will combine to create a complete data.json and be uploaded to a unique database that only holds the formed file.
+
+Through the use of these scripts we managed to accumlate about *six thousand* different pictures for sign langauge characters.
 
 **Before the neural network** we decided to work on a algorithimic solution in order to get a better idea of the challenges we would face with the network. We developed two different methods:
 
@@ -121,21 +125,27 @@ Signs such as M and I were mistaken for each other often under the algorithimc a
 
 Since the Z-score method was significantly more accurate, we decided to go with that over the angle method.
 
-There also came the problem of network architecture. Research told us that the best layers for the job would be Relu and we tinkered with the number of layers and density, adding some dropoffs and seeing what was optimal.  Evenetually, we decided to see if we could algorithimically find the most effective architecture. After many hours of computing time, we procedually generated 270 different neural networks with different combinations of layer counts,layer types, layer densities and found the most optimal neural network to be cone shaped. Specifically:
+There also came the problem of network architecture. Research told us that the best layers for the job would be Relu and we tinkered with the number of layers and density, adding some dropoffs and seeing what was optimal.  Evenetually, we decided to see if we could [algorithimically find the most effective architecture and created a script on Google Colab to do so](https://colab.research.google.com/drive/1kiLfHN8at88c2F1hkQqxmH96P7mjcJGq). After many hours of computing time, we procedually generated 270 different neural networks with different combinations of layer counts,layer types, layer densities and found the most optimal neural network to be cone shaped. Specifically:
 
 Relu(x900) -> Dropout(.15) -> Relu(x400) -> Dropout(.25) -> Tanh(x200) -> Dropout(.4) -> Softmax(x24)
 
 Note, that other than rounding the numbers to be more human friendly, the architecture of this neural network was found to be the most optimal by a computer. Even without human biases, the architecture that was developed has a clear pattern to it. Density decreases throughoutu the layers while dropout increases.
 
-
 ## Key Results
 
-With the data we currently have and the neural network we are currently using we have an accuracy hovering around 80%
-As of right now this only applies to 24 letters of the alphabet (J and Z were excluded due their motion based nature)
-This is impressive as it doesn't require any external teacking systems, only a camera or webcam is necessary to begin understanding ASL.
-While it is limited now, what we have created provides a solid foundation for addition of new letters and even words.
-And with even more data our accuracy could improve further, as currently our data consists solely of our own team members hands.
-With more time, effort, and resources our project could become a very important part of communication for ASL users.
+- Real-time translation of sign language is a computationally difficult task that may not be possible on most consumer-grade hardware. The exception to that is if the software is based on Mediapipe. However, as of time of writing this, Mediapipe has poor documentation and can only track hands (not arms and face).
+
+- One of the largest obstacles to the creating of a neural network for the translation of sign language is the lack of publically available sign language data. Possible solution could be to crowdsource data collection.
+
+- The collection, management, and processing of training data is a task which cannot feasibly be done manually, and should be streamlined.
+
+- Sign language translation cannot be accurately done in an algorthmic approach as many signs look very similar when it (x, y) coordinate form. It is necessiary to use a neural network.
+
+- Coordinate data from pictures is not optimal input to a translation neural network. Accuracy rates increase (60% -> 85% in our case) when each frame has z-scores indvidiually calucated for each set of x and y coordinates.
+
+- We were able to complete real-time translation of characters A-Y (excluding J) with 89% accuracy.
+
+- ASL Characters J and Z along with almost all ASL words are "time-series" signs that will require the use of an LSTM and compelx data management infastructure.
 
 ## Summary
 
@@ -145,5 +155,4 @@ This entire project would not have been possible without the help of every singl
 
 ## Future Work
 
-We plan to add words in the future as well as J and Z characters, all of which are motion based rather than static. Even though it serves a greater challenge we believe that we will be able to tackle it.
-Another portion of our future plan is to collect more data, both to increase the accuracy of the 24 letters as well as to allow us to extend into words.
+Future work could include the completion of the alphabet with time-series characters J and Z. In order to do so, we would need to modify our Google Colab scripts to accomdate videos. We would also have to create a Mediapipe calculator to store the last n frames of data. One problem that requires research is finding out how many previous frames the neural network should be fed in order to accurately predict most signs. If J and Z are completed with high accuracy, it would be somewhat trivial to expand the neural network to the most popular sign language words. The biggest bottleneck in that case would be lack of available data on sign language words.
