@@ -15,6 +15,8 @@ The goal of SigNN is to develop a software which is capable of real-time transla
 - Daniel Lohn
 - Conor O'Brien
 
+Thank you to all contributors for making this project possible.
+
 ## Motivation
 
 Developing a tool for sign language translation has been a project many have attempted in the past two decades. A primitive start to the general project of sign language translation was the sign language glove. [In 2002, a MIT student was amongst the first to achive a basic form of translation through the use of a glove.](https://lemelson.mit.edu/resources/ryan-patterson "The system includes a soft, leather glove outfitted with ten sensors that a signer wears on his or her hand, and a small computer that associates each hand position with a corresponding letter. By finger-spelling words using the standard American Sign Language alphabet, each letter would be transmitted to and captured by the processing unit") Since then, many different types of sign langauge golve prototypes have been made. However, gloves have many limitations. One obvious limitation is the impractcality of carrying around such a glove at all times. One less obvious limitation is that sign langauge involves just more than the hands - it involves arm movements and facial expression as well.
@@ -36,6 +38,8 @@ From Mediapipe
 Sign language translation has yet to be done comprehensively with Mediapipe, given that it is a brand new and yet-to-be documented technology. Our motivation for this project is **to be among the first to use this promising new technology and apply it to a problem that many have attempted to tackle in the past.**
 
 ## Methodology
+
+### Three phases
 
 When it comes to *complete* sign language translation, there are **three major phases**:
 
@@ -59,6 +63,8 @@ Credit to DeepASL
 In the end, the lack of hand presistence did not pose a substantial problem due to the scope of the sign langauge translation we aimed to complete.
 
 **Phase 2** is in the realm of SigNN. We are to, given the coordinates from phase 1, output which character the user has signed. To completely finish phase 2, the neural network must be able to identify most *words* in ASL. This task would have been far to ambitious for our team, as we do not have the resources to collect all that data necessiary. Additionally, we did not have the time to work with time-series of data (more on this later), so we decided to settle for 24/26 sign langauge characters.
+
+### Mediapipe
 
 **We began our project** by trying to break into the black box that was Mediapipe. While there is some basic documentation, much of what we learned was through experimentation and modification of the source code. After a month, we finally had a good idea of how to modify Mediapipe for our puroses.  
 
@@ -86,6 +92,12 @@ The example shown above is the modification we made to the Multiple Hand Detecti
 
 This is an example of the output we modified Mediapipe to output. On the left is the rendered image that Mediapipe normally outputs and on the right is a graph of the series of coordinates that we modified Mediapipe to output.
 
+### OpenPose
+
+**We also looked at OpenPose** as an alternative to Mediapipe. We figured that tracking the arms and the face would significantly increase our accuracy levels. However, most of our collected data did not include the entire upper body. As a result, only ~1,000 / ~6,000 images could be used to train the neural network. After training the neural network we recieved an unsatisfactory ~77% accuracy. Lastly, OpenPose was prohibitively slow on our laptops and we found that it could not be used to translate sign language in real-time. As a result, we decided to stay with our original framework of Mediapipe.
+
+### Data Collection
+
 **Data collection** was a crucial part of increasing our accuracy. We would have prefered to use publically available data to train our neural network. However, there were very few sign language data sets and the ones that did exist were of very low quality. As a result, we decided to create our own dataset. While the idea seems simple, it quickly became a problem for us as we took more and more pictures.
 
  We started with a data set of 100 pictures and over winter break managed to expand to about 500 pictures, impressive at the time. After running testing with the neural network, we found our accuracy was unacceptable, about 60%. Up until this point, all data processing (turning of images into coordinates) was done semi-manually and all data was stored on a hard drive. We played around with the idea of a central website for the group (and maybe some voltuneers) to be able to upload their hands, however, we found a much better solution: Goolge Colab and Google Drive.
@@ -104,6 +116,8 @@ We created a series of Google Colab scripts in order to streamline data collecti
 
 Through the use of these scripts we managed to accumlate about *six thousand* different pictures for sign langauge characters.
 
+### Algorithimic Approach
+
 **Before the neural network** we decided to work on a algorithimic solution in order to get a better idea of the challenges we would face with the network. We developed two different methods:
 
 - Z-score method: For each frame, take all x coordinates and convert them into z scores and then take all y coordinates and convert them into z scores.
@@ -116,6 +130,8 @@ Both these methods used minimize error min(modeled_coordinate_i - actual_coordin
 ![M in sign language](https://user-images.githubusercontent.com/49175620/76174417-5a6df180-6164-11ea-8238-ebf46d90c60e.png)
 
 Signs such as M and I were mistaken for each other often under the algorithimc approach due to their similiar characteristics.
+
+### Neural Network
 
 **Working on the neural network**, we didn't find much success with simply feeding in the data to the network. Our accuracy was hovering in the 60% range. We assumed that the neural network would figure out how to best interpret the data internally, but we soon got the idea of preprocessing the data in some way. The angle and z-score methods we used in the algorithimic approach made their way back. We hoped that both methods would reduce variability between samples (though they were already normalized) but didn't know which would be more effective. We saw a great boost in our accuracy when we used both methods:
 
@@ -131,7 +147,7 @@ Relu(x900) -> Dropout(.15) -> Relu(x400) -> Dropout(.25) -> Tanh(x200) -> Dropou
 
 Note, that other than rounding the numbers to be more human friendly, the architecture of this neural network was found to be the most optimal by a computer. Even without human biases, the architecture that was developed has a clear pattern to it. Density decreases throughoutu the layers while dropout increases.
 
-## Key Results
+## Key Results and Summary
 
 - Real-time translation of sign language is a computationally difficult task that may not be possible on most consumer-grade hardware. The exception to that is if the software is based on Mediapipe. However, as of time of writing this, Mediapipe has poor documentation and can only track hands (not arms and face).
 
@@ -146,12 +162,6 @@ Note, that other than rounding the numbers to be more human friendly, the archit
 - We were able to complete real-time translation of characters A-Y (excluding J) with 89% accuracy.
 
 - ASL Characters J and Z along with almost all ASL words are "time-series" signs that will require the use of an LSTM and compelx data management infastructure.
-
-## Summary
-
-We have poured a lot of time and effort into a project we hope can serve to further communication between ASL users and non-ASL users.
-We learned a lot regarding ASL, hand-tracking, neural networks, data collection, and most of all teamwork.
-This entire project would not have been possible without the help of every single one of our team members.
 
 ## Future Work
 
