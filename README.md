@@ -23,28 +23,110 @@ As AI and computation power have improved over time, people have attempted to de
 
 There have been a few different frameworks created to detect the position of hands, but the most famous of them is of course, OpenPose. OpenPose not only interprets the hands of an image, but also the arms and face, which are other vital parts of sign langauge translation.
 
-![](https://user-images.githubusercontent.com/49175620/76171514-8e87e900-6149-11ea-8c7e-963cc5c74173.gif)
+![OpenPose demo](https://user-images.githubusercontent.com/49175620/76171514-8e87e900-6149-11ea-8c7e-963cc5c74173.gif)
+From OpenPose
 
 As impressive as OpenPose is, it faces one major challenge: speed. It is extremely slow and cannot be run on the average smartphone or computer in the forseeable future. By the developers' own measurements, [the model runs at .1 FPS to .3 FPS average depending on the OpenPose model used. ](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/speed_up_openpose.md "The CPU version runs at about 0.3 FPS on the COCO model, and at about 0.1 FPS (i.e., about 15 sec / frame) on the default BODY_25 model."). Such speed is nowhere near sufficient to enable real-time sign language translation. Prehaps if it is run in a powerful, remote server it could work. However, such a server would have an unmaintanably expensive cost per user ratio unless the users would be prepared to pay a monthly subscription. Without the issue of speed, Openpose has been shown to be an effective framework for sign langauge translation and the favorite choice of researchers.
 
 In June 2019, developers at Google first created the repo Mediapipe on GitHub. Mediapipe, unlike OpenPose, is not a just a neural network but is an entire framework for the management and executing of neural networks on streams of data (such as video and audio). Mediapipe is still in alpha stages and lacks much comprehensive documentation. Compared to OpenPose, it should be less effective for sign langauge translation given that the provided model only detects hands and not the entire arm plus face. However, what makes Mediapipe, in practice, more effective than Openpose given its impressive framerate and ability to be run on any enviornment: from computer to smarthpone [to even browser.](https://viz.mediapipe.dev/runner/demos/hand_tracking/hand_tracking.html "Click here for a Mediapipe hand tracking demo")
 
-![](https://raw.githubusercontent.com/google/mediapipe/master/mediapipe/docs/images/mobile/hand_tracking_android_gpu.gif)
+![Mediapipe demo](https://raw.githubusercontent.com/google/mediapipe/master/mediapipe/docs/images/mobile/hand_tracking_android_gpu.gif)
+From Mediapipe
 
 Sign language translation has yet to be done comprehensively with Mediapipe, given that it is a brand new and yet-to-be documented technology. Our motivation for this project is **to be among the first to use this promising new technology and apply it to a problem that many have attempted to tackle in the past.**
 
 ## Methodology
 
-When we began work on our project we had Mediapipe. Mediapipe provided a solid foundation for both data collection as well as hand tracking. This meant that we already had a major obstacle removed, hand tracking, which meant we didn't have to waste time creating our own hand tracking system. There was a tradeoff, Mediapipe was new and barely documented, meaning we had to learn how it worked with almost no resources to look to, not even StackOverflow. We eventually learned enough about Mediapipe to get it working and started work on some algorithms as well as a neural network to turn coordinates into letters.
+When it comes to *complete* sign language translation, there are **three major phases**:
 
-When we returned from Winter Break we not only had 2 working algorithms but a neural network that was accurate 87% of the time. We knew the algorithms were going to become obsolete within a few weeks of their completion, but they provided insight into potential obstacles that the neural network may encounter.
+1. Recognition of hands in motion, with some idea of hand persistence (left hand versus right hand)
 
-For example, some letters were acidentally detected more often
-than others such as M or I due to sharing characteristics with multiple other letters.
+2. The translation of individual words
 
-![alt text](https://github.com/JohnK-mi/mediapipe/blob/master/scripts/mediapipe_image_means/M.png)
+3. The interpretation of words into sentences (ASL does not use the structured grammatical rules of English)
 
-![alt text](https://github.com/JohnK-mi/mediapipe/blob/master/scripts/mediapipe_image_means/I.png)
+![Credit to DeepASL](https://user-images.githubusercontent.com/49175620/76172748-170c8680-6156-11ea-87d0-2045b5b1e373.png)
+Credit to DeepASL
+
+**Phase 1** is partially done by the Hand Tracking NN provided by Mediapipe. Mediapipe can only detect the precense and position of hands, but cannot differentiate between the left hand and right hand. Our team has had many discussions on how to tackle this issue, here are some solutions we proposed:
+
+- Detecting the subtle difference in left and right hand finger lengths
+
+- Using the difference in skin color on the front and back of the hand
+
+- Asking the use to caliberate by having their hands to their sides and then associating that position with left and right. Then updating left and right each frame to whichever hand is closest to the last known position of left and right
+
+In the end, the lack of hand presistence did not pose a substantial problem due to the scope of the sign langauge translation we aimed to complete.
+
+**Phase 2** is in the realm of SigNN. We are to, given the coordinates from phase 1, output which character the user has signed. To completely finish phase 2, the neural network must be able to identify most *words* in ASL. This task would have been far to ambitious for our team, as we do not have the resources to collect all that data necessiary. Additionally, we did not have the time to work with time-series of data (more on this later), so we decided to settle for 24/26 sign langauge characters.
+
+**We began our project** by trying to break into the black box that was Mediapipe. While there is some basic documentation, much of what we learned was through experimentation and modification of the source code. After a month, we finally had a good idea of how to modify Mediapipe for our puroses.  
+
+![Diagram of a Mediapipe graph](https://raw.githubusercontent.com/google/mediapipe/master/mediapipe/docs/images/mobile/hand_tracking_mobile.png)
+
+The diagram above shows the Mediapipe graph for detecting and rendering the position of a hand in a video. Mediapipe works through a system of graphs, subgraphs, calculators, and packets.
+
+- Packets: Packets is simply any data structure with a time stamp. In the shown diagram, input_video is the packet that is fed into the graph. The HandLandmark subgraph takes in the packets: NORM_RECT and IMAGE while outputs the packets: NORM_RECT, PRESENCE, and LANDMARKS. Packets are sent between calculators on each frame.
+
+- Graph: A graph is the structure of the entire program. The entire diagram tiself is a graph called "Hand Tracking CPU". Graphs are defined in special .pbtxt files and are read at the start of run-time, meaning that they can be modified without recompiling the code
+
+- Calculators: Calculators can have inputs and outputs. They run code on creation, per frame, and on close. An example of a calculator could be one that takes in coordaintes of hands and outputs those coordinates being normalized. Another example of a calculator could be one that takes in a tensorflow session and a series of tensors and outputs detections. Some examples of calculators in the diagram are: FlowLimiter, PreviousLoopback, and Gate
+
+- Subgraph: A subgraph is a series of calculators grouped into a graph. Subgraphs have defined inputs and outputs and help to abstract what would be an otherwise overcomplicated .pbtxt file and diagram. The subgraphs in the diagram are in blue and are: HandLandmark, HandDetection, and Renderer
+
+[Read more about Mediapipe's structure here](https://mediapipe.readthedocs.io/en/latest/calculator.html)
+
+We were then able to modify the structure of Mediapipe's hand tracking graph to output the coordinates of the hands, which were hiding in HandLandmark as the packet called LANDMARKS.
+
+![Coordinate console logger](https://user-images.githubusercontent.com/49175620/76173312-a1a3b480-615b-11ea-9645-7541a397f169.PNG)
+
+The example shown above is the modification we made to the Multiple Hand Detection CPU graph in order to get output to the console. From there, the output could be piped into a python application for data collection.
+
+![e](https://user-images.githubusercontent.com/49175620/76174303-cb60d980-6163-11ea-933b-f0c0fd09d32f.PNG)
+
+This is an example of the output we modified Mediapipe to output. On the left is the rendered image that Mediapipe normally outputs and on the right is a graph of the series of coordinates that we modified Mediapipe to output.
+
+**Data collection** quickly became a problem for us as we took more and more pictures. We started with a data set of 100 and over winter break managed to expand to about 500 pictures, impressive at the time. After running testing with the neural network, we found our accuracy was unacceptable, about 60%. Up until this point, all data processing (turning of images into coordinates) was done semi-manually and all data was stored on a hard drive. We played around with the idea of a central website for the group (and maybe some voltuneers) to be able to upload their hands, however, we found a much better solution: Goolge Colab and Google Drive.
+
+![Data collection process](https://user-images.githubusercontent.com/49175620/76173861-7a9bb180-6160-11ea-9c34-68871054c4c5.png)
+
+We created a series of Google Colab scripts in order to streamline data collection and processing:
+
+- Database structure: This is a data structure created in order to be able to interact with the same Google Drive folder without having to all share the same account. It allows for downloading, uploading, and listing of files based on character.
+
+- Data collection script [(Mediapipe or Openpose)](https://colab.research.google.com/drive/1o-Ao3_oe0CKDDUJlDplGvhB70wcKaBMA): The script records the webcam and take (n) pictures with a delay of (m) miliseconds. We stuck to taking 30 pictures with 300 milisecond delay. This allows us to create a lot of data quickly. After taking the pictures, it uploads them to a Google Drive database of raw images, each file with a unique name.
+
+- Json creation script ([Mediapipe](https://colab.research.google.com/drive/1RUSUH9C91uZt3MO56yqZMglqol0aPVoX) / [Openpose](https://colab.research.google.com/drive/1zWzXpi_9n0R23Dk_pA3PPs5J_6pk-9Bw)): This script will get a list of all raw images and all raw json files. Then the script will process all raw images that have not been found in the raw json folder. It can do this because one image will create one json file of the same name and upload it to the raw json folder.
+
+- Json formation script ([Openpose](https://colab.research.google.com/drive/1F4Zw9shdp73fVYtX0jMD7idA-TecCpCJ)): This script will download the formed json file for each character (Formed json is the collection of many json files into one json list or object). If the length of the list of the formed json file is equal to the number of raw json files associated with that character, we know that there have been no additional json files added. Otherwise, we will delete the formed_json file (as we cannot discriminately modify the formed json file) and reform it with the data from the raw json folder for that associated character. When all characters are formed, they will combine to create a complete data.json and be uploaded to a unique database that only holds the formed file.
+
+**Before the neural network** we decided to work on a algorithimic solution in order to get a better idea of the challenges we would face with the network. We developed two different methods:
+
+- Z-score method: For each frame, take all x coordinates and convert them into z scores and then take all y coordinates and convert them into z scores.
+
+- Angle method: For each frame, take the angle between each (x, y) coordinate and the next. This will allow the hand to be at any angle (rather than only just head-on).
+
+Both these methods used minimize error min(modeled_coordinate_i - actual_coordinate) in order to predict which sign was being displayed. Of course, the algorithimic approach was unsuccessful. The task is too complicated for a simple algorithim to solve. However, the two methods we came up with heavily influenced on work on the neural network.
+
+![I in sign language](https://user-images.githubusercontent.com/49175620/76174415-59d55b00-6164-11ea-97d7-74a348007bf7.png)
+![M in sign language](https://user-images.githubusercontent.com/49175620/76174417-5a6df180-6164-11ea-8238-ebf46d90c60e.png)
+
+Signs such as M and I were mistaken for each other often under the algorithimc approach due to their similiar characteristics.
+
+**Working on the neural network**, we didn't find much success with simply feeding in the data to the network. Our accuracy was hovering in the 60% range. We assumed that the neural network would figure out how to best interpret the data internally, but we soon got the idea of preprocessing the data in some way. The angle and z-score methods we used in the algorithimic approach made their way back. We hoped that both methods would reduce variability between samples (though they were already normalized) but didn't know which would be more effective. We saw a great boost in our accuracy when we used both methods:
+
+- Z-score method: ~85% accuracy
+
+- Angle method: ~75% accuracy
+
+Since the Z-score method was significantly more accurate, we decided to go with that over the angle method.
+
+There also came the problem of network architecture. Research told us that the best layers for the job would be Relu and we tinkered with the number of layers and density, adding some dropoffs and seeing what was optimal.  Evenetually, we decided to see if we could algorithimically find the most effective architecture. After many hours of computing time, we procedually generated 270 different neural networks with different combinations of layer counts,layer types, layer densities and found the most optimal neural network to be cone shaped. Specifically:
+
+Relu(x900) -> Dropout(.15) -> Relu(x400) -> Dropout(.25) -> Tanh(x200) -> Dropout(.4) -> Softmax(x24)
+
+Note, that other than rounding the numbers to be more human friendly, the architecture of this neural network was found to be the most optimal by a computer. Even without human biases, the architecture that was developed has a clear pattern to it. Density decreases throughoutu the layers while dropout increases.
+
 
 ## Key Results
 
