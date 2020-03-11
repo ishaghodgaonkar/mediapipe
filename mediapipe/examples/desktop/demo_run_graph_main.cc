@@ -102,7 +102,7 @@ DEFINE_bool(render_video, true,
 
   LOG(INFO) << "Start running the calculator graph.";
   if(save_json){
-    LOG(INFO) << "Start grabbing and processing frames.";
+    LOG(INFO) << "Will save output as json.";
     ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
                 graph.AddOutputStreamPoller(kOutputStreamCoordinates));
     MP_RETURN_IF_ERROR(graph.StartRun({}));
@@ -167,7 +167,7 @@ DEFINE_bool(render_video, true,
     return graph.WaitUntilDone();
   }
   if(! FLAGS_render_video){
-    LOG(INFO) << "Start grabbing and processing frames.";
+    LOG(INFO) << "Will not render video.";
     MP_RETURN_IF_ERROR(graph.StartRun({}));
     size_t frame_timestamp = 0;
     bool grab_frames = true;
@@ -205,7 +205,7 @@ DEFINE_bool(render_video, true,
                 graph.AddOutputStreamPoller(kOutputStream));
   MP_RETURN_IF_ERROR(graph.StartRun({}));
 
-  LOG(INFO) << "Start grabbing and processing frames.";
+  LOG(INFO) << "Will render video";
   size_t frame_timestamp = 0;
   bool grab_frames = true;
   while (grab_frames) {
