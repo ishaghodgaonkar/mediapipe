@@ -47,6 +47,9 @@ DEFINE_string(output_video_path, "",
 DEFINE_string(output_json_path, "",
               "Full path of where to save result (.json only). "
               "If not provided, show result in a window.");
+DEFINE_bool(render_video, true,
+              "Option to output video or not"
+              "If not provided, output result in window");
 
 ::mediapipe::Status RunMPPGraph() {
   std::string calculator_graph_config_contents;
@@ -77,6 +80,9 @@ DEFINE_string(output_json_path, "",
   const bool save_json = !FLAGS_output_json_path.empty();
   if(save_json && save_video){
     throw "Cannot save json and video";
+  }
+  if((! FLAGS_render_video) && (save_json || save_video)){
+    throw "Cannot skip render video and save json or save video";
   }
   if (save_video) {
     LOG(INFO) << "Prepare video writer.";
@@ -159,6 +165,41 @@ DEFINE_string(output_json_path, "",
     LOG(INFO) << "Shutting down.";
     MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
     return graph.WaitUntilDone();
+  }
+  if(! FLAGS_render_video){
+    LOG(INFO) << "Start grabbing and processing frames.";
+    MP_RETURN_IF_ERROR(graph.StartRun({}));
+    size_t frame_timestamp = 0;
+    bool grab_frames = true;
+    while (grab_frames){
+      // Capture opencv camera or video frame.
+      cv::Mat camera_frame_raw;
+      capture >> camera_frame_raw;
+      if (camera_frame_raw.empty()) break;  // End of video.
+      cv::Mat camera_frame;
+      cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
+      if (!load_video) {
+        cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
+      }
+      
+    // Wrap Mat into an ImageFrame.
+    auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
+    mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
+    mediapipe::ImageFrame::kDefaultAlignmentBoundary);
+    cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
+    camera_frame.copyTo(input_frame_mat);
+    
+    // Send image packet into the graph.
+    MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
+        kInputStream, mediapipe::Adopt(input_frame.release())
+                          .At(mediapipe::Timestamp(frame_timestamp++))));
+      mediapipe::Packet packet;
+
+    }
+    MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
+    mediapipe::Status status =  graph.WaitUntilDone();
+    LOG(INFO) << "Shutting down.";
+    return status;
   }
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
                 graph.AddOutputStreamPoller(kOutputStream));

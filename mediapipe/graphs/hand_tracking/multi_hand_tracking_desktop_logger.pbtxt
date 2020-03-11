@@ -57,6 +57,18 @@ node {
   output_stream: "NORM_RECTS:multi_hand_rects_from_landmarks"
 }
 
+node{
+  calculator: "CoordinateLoggerCalculator"
+  input_stream: "LANDMARKS:multi_hand_landmarks"
+  node_options: {
+    [type.googleapis.com/mediapipe.CoordinateLoggerCalculatorOptions] {
+      use_absolute_path: true
+      logger_path: "mediapipe/calculators/signn/log/"
+      filename: "test.json"
+    }
+  }
+}
+
 
 # Caches a hand rectangle fed back from MultiHandLandmarkSubgraph, and upon the
 # arrival of the next input image sends out the cached rectangle with the

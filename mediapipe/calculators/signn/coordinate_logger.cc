@@ -4,6 +4,7 @@
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/deps/file_path.h"
 #include "mediapipe/framework/port/file_helpers.h"
+#include "mediapipe/calculators/signn/coordinate_logger_calculator.pb.h"
 
 #include <vector>
 #include <string>
@@ -30,29 +31,40 @@ namespace mediapipe{
             return ::mediapipe::OkStatus();
         }
         ::mediapipe::Status Open(CalculatorContext* cc){
-            std::string log_path = mediapipe::file::JoinPath("./",
-                                                            "mediapipe/calculators/signn/log/");
-            auto now = std::chrono::system_clock::now();
-            time_t now_as_time = std::chrono::system_clock::to_time_t(now);
-            std::string time_as_string = (std::string) ctime(&now_as_time);
-            // time_as_string = Fri Nov 29 01:33:30 2019
-            std::string fileName = "";
-            bool first_space_hit = false;
-            for(char c: time_as_string){
-                if(first_space_hit){
+            const auto& options = cc->Options<::mediapipe::CoordinateLoggerCalculatorOptions>();
+            bool absolute_path = options.use_absolute_path();
+            std::string logger_path = options.logger_path();
+            std::string fileName = options.filename();
+            std::string log_path;
+            if(absolute_path){
+                log_path = mediapipe::file::JoinPath("./",
+                                                            logger_path);
+            }else{
+                log_path = logger_path;
+            }
+            if(fileName == ""){
+                auto now = std::chrono::system_clock::now();
+                time_t now_as_time = std::chrono::system_clock::to_time_t(now);
+                std::string time_as_string = (std::string) ctime(&now_as_time);
+                // time_as_string = Fri Nov 29 01:33:30 2019
+                bool first_space_hit = false;
+                for(char c: time_as_string){
+                    if(first_space_hit){
+                        if(c == ' '){
+                            fileName += '_';
+                        }else{
+                            fileName += c;
+                        }
+                    }
                     if(c == ' '){
-                        fileName += '_';
-                    }else{
-                        fileName += c;
+                        first_space_hit = true;
                     }
                 }
-                if(c == ' '){
-                    first_space_hit = true;
-                }
+                // fileName = Nov_29_01:33:30_2019
+                fileName += ".json";
+                // fileName = Nov_29_01:33:30_2019.txt
             }
-            // fileName = Nov_29_01:33:30_2019
-            fileName += ".json";
-            // fileName = Nov_29_01:33:30_2019.txt
+
             log_path = mediapipe::file::JoinPath(log_path, fileName);
             LOG(INFO) << "Opening logger at the following path: " << log_path;
             file.open(log_path);

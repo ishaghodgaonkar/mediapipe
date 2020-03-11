@@ -40,6 +40,22 @@ cc_library(
     alwayslink = 1,
 )
 
+proto_library(
+    name = "coordinate_logger_calculator_proto",
+    srcs = ["coordinate_logger_calculator.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_proto",
+    ],
+)
+mediapipe_cc_proto_library(
+    name = "coordinate_logger_calculator_cc_proto",
+    srcs = ["coordinate_logger_calculator.proto"],
+    cc_deps = ["//mediapipe/framework:calculator_cc_proto"],
+    visibility = ["//visibility:public"],
+    deps = [":coordinate_logger_calculator_proto"],
+)
+
 cc_library(
     name = "logger_calculator",
     srcs = ["coordinate_logger.cc"],
@@ -50,6 +66,7 @@ cc_library(
         "//mediapipe/framework/formats:location_data_cc_proto",
         "//mediapipe/framework/formats:detection_cc_proto",
         "//mediapipe/framework/deps:file_path",
+        ":coordinate_logger_calculator_cc_proto"
     ] + select({
         "//conditions:default": [
             "//mediapipe/framework/port:file_helpers",
