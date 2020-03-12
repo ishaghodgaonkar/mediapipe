@@ -36,7 +36,7 @@ namespace mediapipe{
             std::string logger_path = options.logger_path();
             std::string fileName = options.filename();
             std::string log_path;
-            if(absolute_path){
+            if(! absolute_path){
                 log_path = mediapipe::file::JoinPath("./",
                                                             logger_path);
             }else{
