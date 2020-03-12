@@ -96,7 +96,7 @@ DEFINE_bool(render_video, true,
   }else if(save_json){
     LOG(INFO) << "Will save result as json";
   }
-   else {
+   else if (FLAGS_render_video) {
     cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
   }
 
