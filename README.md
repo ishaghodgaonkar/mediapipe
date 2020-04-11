@@ -147,6 +147,11 @@ Relu(x900) -> Dropout(.15) -> Relu(x400) -> Dropout(.25) -> Tanh(x200) -> Dropou
 
 Note that other than rounding the numbers to be more human friendly, the architecture of this neural network was found to be the most optimal by a computer. Even without human biases, the architecture that was developed has a clear pattern to it. Density decreases throughout the layers while dropout increases.
 
+Updated Google Colab notebook by ishaghodgaonkar containing bugfixes (str to float for some inputs when training) and keras model versions to experiment with converting to CoreML and TFlite:
+https://colab.research.google.com/drive/1c1rdzV0Yr5TcWWkNIluClMwCDunPQA2T#scrollTo=_ocb1shLj7Dq&uniqifier=2
+April 11, 2020
+
+
 ## Key Results and Summary
 
 - Real-time translation of sign language is a computationally difficult task that may not be possible on most consumer-grade hardware. The exception to that is if the software is based on Mediapipe. However, as of time of writing this, Mediapipe has poor documentation and can only track hands (not arms and face).
